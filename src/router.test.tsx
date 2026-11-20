@@ -1,8 +1,12 @@
-import { expect, test } from "@rstest/core";
+import { expect, rs, test } from "@rstest/core";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "./App";
 import { createRouter, createTestRouter } from "./router";
+
+rs.mock("@/lib/login", () => ({
+  login: rs.fn(async () => ({ ok: false, code: "cancelled" })),
+}));
 
 const renderAt = (path: string) => render(<App router={createTestRouter([path])} />);
 

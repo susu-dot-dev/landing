@@ -10,6 +10,10 @@ import type {
   LetteringFactory,
 } from "./types";
 
+rs.mock("@/lib/login", () => ({
+  login: rs.fn(async () => ({ ok: false, code: "cancelled" })),
+}));
+
 interface MockControllers {
   cityscapes: Array<
     CityscapeController & { [K in keyof CityscapeController]: ReturnType<typeof rs.fn> }
