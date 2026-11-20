@@ -1,15 +1,56 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { IllustratorLettering, InkCityscape } from "@/canvas";
 import { LoginDialog } from "./LoginDialog";
-import { StudioControls } from "./StudioControls";
-import type {
-  CityscapeController,
-  CityscapeFactory,
-  LetteringController,
-  LetteringFactory,
-  PaletteKey,
-  ShadingMedium,
+import {
+  type CityscapeController,
+  type CityscapeFactory,
+  type LetteringController,
+  type LetteringFactory,
+  PALETTE_KEYS,
+  type PaletteKey,
+  type ShadingMedium,
 } from "./types";
+
+const PALETTE_STORAGE_KEY = "susu-palette";
+const DEFAULT_REDRAW_INTERVAL_MS = 30_000;
+
+function isPaletteKey(value: string | null | undefined): value is PaletteKey {
+  return value === "sumi" || value === "twilight" || value === "nocturne";
+}
+
+export function pickNextPalette(random: () => number = Math.random): PaletteKey {
+  let previous: string | null = null;
+  try {
+    previous = window.sessionStorage.getItem(PALETTE_STORAGE_KEY);
+  } catch {
+    previous = null;
+  }
+
+  const candidates = PALETTE_KEYS.filter((key) => key !== previous);
+  const index = Math.floor(random() * candidates.length);
+  const next = candidates[index] ?? "sumi";
+
+  try {
+    window.sessionStorage.setItem(PALETTE_STORAGE_KEY, next);
+  } catch {
+    // Ignore storage failures in restricted browsing contexts.
+  }
+
+  return next;
+}
+
+export function resolveInitialPalette(
+  explicit?: PaletteKey,
+  random: () => number = Math.random,
+): PaletteKey {
+  if (explicit) return explicit;
+  const bootPalette = document.documentElement.dataset.palette;
+  if (isPaletteKey(bootPalette)) {
+    delete document.documentElement.dataset.palette;
+    return bootPalette;
+  }
+  return pickNextPalette(random);
+}
 
 const defaultCreateCityscape: CityscapeFactory = (canvas, options) =>
   new InkCityscape(canvas, options);
@@ -22,16 +63,17 @@ export interface LandingStageProps {
   createLettering?: LetteringFactory;
   initialPalette?: PaletteKey;
   initialMedium?: ShadingMedium;
+  redrawIntervalMs?: number;
 }
 
 export function LandingStage({
   createCityscape = defaultCreateCityscape,
   createLettering = defaultCreateLettering,
-  initialPalette = "sumi",
+  initialPalette,
   initialMedium = "marker",
+  redrawIntervalMs = DEFAULT_REDRAW_INTERVAL_MS,
 }: LandingStageProps) {
-  const [palette, setPalette] = useState<PaletteKey>(initialPalette);
-  const [medium, setMedium] = useState<ShadingMedium>(initialMedium);
+  const [palette] = useState<PaletteKey>(() => resolveInitialPalette(initialPalette));
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   const stageRef = useRef<HTMLDivElement | null>(null);
@@ -41,8 +83,7 @@ export function LandingStage({
 
   const cityscapeRef = useRef<CityscapeController | null>(null);
   const letteringRef = useRef<LetteringController | null>(null);
-  const paletteRef = useRef<PaletteKey>(palette);
-  const mediumRef = useRef<ShadingMedium>(medium);
+  const isLoginOpenRef = useRef(isLoginOpen);
 
   useEffect(() => {
     const cityscapeCanvas = cityscapeCanvasRef.current as HTMLCanvasElement;
@@ -50,17 +91,17 @@ export function LandingStage({
     const stageElement = stageRef.current as HTMLDivElement;
 
     const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const reducedMotion = reducedMotionQuery.matches;
+    let reducedMotion = reducedMotionQuery.matches;
 
     const cityscape = createCityscape(cityscapeCanvas, {
-      palette: paletteRef.current,
+      palette,
       reducedMotion,
     });
 
     const lettering = createLettering(letteringCanvas, {
       text: "susu.dev",
-      palette: paletteRef.current,
-      medium: mediumRef.current,
+      palette,
+      medium: initialMedium,
       reducedMotion,
     });
 
@@ -68,6 +109,7 @@ export function LandingStage({
     letteringRef.current = lettering;
 
     const handleReducedMotionChange = (event: MediaQueryListEvent) => {
+      reducedMotion = event.matches;
       cityscape.setReducedMotion(event.matches);
       lettering.setReducedMotion(event.matches);
     };
@@ -91,7 +133,14 @@ export function LandingStage({
       window.addEventListener("resize", handleResize);
     }
 
+    const redrawTimer = window.setInterval(() => {
+      if (!document.hidden && !reducedMotion && !isLoginOpenRef.current) {
+        cityscape.regenerate();
+      }
+    }, redrawIntervalMs);
+
     return () => {
+      window.clearInterval(redrawTimer);
       if (resizeObserver) {
         resizeObserver.disconnect();
       } else {
@@ -104,31 +153,15 @@ export function LandingStage({
       cityscapeRef.current = null;
       letteringRef.current = null;
     };
-  }, [createCityscape, createLettering]);
+  }, [createCityscape, createLettering, initialMedium, palette, redrawIntervalMs]);
 
   useEffect(() => {
+    isLoginOpenRef.current = isLoginOpen;
     (cityscapeRef.current as CityscapeController).setPaused(isLoginOpen);
   }, [isLoginOpen]);
 
-  const handlePaletteChange = useCallback((nextPalette: PaletteKey) => {
-    paletteRef.current = nextPalette;
-    setPalette(nextPalette);
-    (cityscapeRef.current as CityscapeController).setPalette(nextPalette);
-    (letteringRef.current as LetteringController).setPalette(nextPalette);
-  }, []);
-
-  const handleMediumChange = useCallback((nextMedium: ShadingMedium) => {
-    mediumRef.current = nextMedium;
-    setMedium(nextMedium);
-    (letteringRef.current as LetteringController).setMedium(nextMedium);
-  }, []);
-
   const handleReplayLettering = useCallback(() => {
     (letteringRef.current as LetteringController).replay();
-  }, []);
-
-  const handleRedrawSkyline = useCallback(() => {
-    (cityscapeRef.current as CityscapeController).regenerate();
   }, []);
 
   const handleOpenLogin = useCallback(() => {
@@ -219,15 +252,6 @@ export function LandingStage({
           </div>
         </div>
       </main>
-
-      <StudioControls
-        palette={palette}
-        medium={medium}
-        onPaletteChange={handlePaletteChange}
-        onMediumChange={handleMediumChange}
-        onReplayLettering={handleReplayLettering}
-        onRedrawSkyline={handleRedrawSkyline}
-      />
 
       <LoginDialog open={isLoginOpen} onClose={handleCloseLogin} triggerRef={loginTriggerRef} />
     </div>

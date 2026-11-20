@@ -122,18 +122,17 @@ describe("SEO and static metadata", () => {
     expect(indexHtml).toContain('localStorage.getItem("susu-theme")');
   });
 
-  test("src/index.html renders semantic initial HTML and a styled noscript fallback", () => {
+  test("src/index.html avoids JS flash-of-content and renders fallback strictly inside noscript .nojs", () => {
     const doc = parseHtml(indexHtml);
 
-    const initialHeading = doc.querySelector("#root main h1");
-    expect(initialHeading?.textContent?.trim()).toBe("susu.dev");
-
-    const initialParagraph = doc.querySelector("#root main p");
-    expect(initialParagraph?.textContent?.trim().length).toBeGreaterThan(20);
+    const root = doc.querySelector("#root");
+    expect(root).not.toBeNull();
+    expect(root?.innerHTML.trim()).toBe("");
 
     const noscriptMatch = indexHtml.match(/<noscript>([\s\S]*?)<\/noscript>/i);
     expect(noscriptMatch).not.toBeNull();
     const noscriptContent = noscriptMatch?.[1] ?? "";
+    expect(noscriptContent).toContain('class="nojs"');
     expect(noscriptContent).toContain("#f3ece0");
     expect(noscriptContent).toContain("susu.dev");
     expect(noscriptContent).toMatch(/<h1\b[^>]*>[\s\S]*susu\.dev[\s\S]*<\/h1>/i);

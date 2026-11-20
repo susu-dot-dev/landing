@@ -330,140 +330,6 @@
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.5);
 }
 
-/* Discreet Studio Look & Feel Dock (matches prototype) */
-.studio-controls {
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 10px;
-  font-family: var(--font-ui);
-}
-
-.studio-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--studio-border);
-  background: var(--studio-bg);
-  color: var(--studio-ink);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.03em;
-  cursor: pointer;
-  opacity: 0.58;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
-  transition:
-    opacity 0.25s ease,
-    transform 0.25s ease;
-}
-
-.studio-toggle:hover,
-.studio-toggle:focus-visible,
-.studio-toggle[aria-expanded="true"] {
-  opacity: 1;
-  transform: translateY(-1px);
-}
-
-.studio-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
-  width: min(92vw, 256px);
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid var(--studio-border);
-  background: var(--studio-bg);
-  color: var(--studio-ink);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
-}
-
-.studio-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  border: 0;
-  margin: 0;
-  padding: 0;
-}
-
-.studio-group-label {
-  padding: 0;
-  margin-bottom: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  opacity: 0.72;
-}
-
-.studio-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.studio-pill {
-  border: 1px solid var(--studio-border);
-  background: transparent;
-  color: inherit;
-  border-radius: 6px;
-  padding: 5px 8px;
-  font-size: 11.5px;
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.studio-pill:hover {
-  border-color: var(--accent);
-}
-
-.studio-pill[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fffaf3;
-}
-
-.landing-stage[data-palette="nocturne"] .studio-pill[aria-pressed="true"] {
-  color: #0f161f;
-}
-
-.studio-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-top: 8px;
-  border-top: 1px solid var(--studio-border);
-}
-
-.studio-action {
-  width: 100%;
-  border: 1px dashed var(--studio-border);
-  background: transparent;
-  color: inherit;
-  border-radius: 7px;
-  padding: 7px 10px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease;
-}
-
-.studio-action:hover {
-  border-color: var(--accent);
-  background: rgba(128, 128, 128, 0.1);
-}
-
 /* Native <dialog> Ink & Paper Login Modal (matches prototype sheet) */
 .landing-dialog {
   margin: auto;
@@ -644,9 +510,6 @@
   }
 
   .water-login-btn,
-  .studio-toggle,
-  .studio-pill,
-  .studio-action,
   .landing-dialog-close,
   .landing-dialog-submit {
     background-color: ButtonFace;
@@ -656,14 +519,12 @@
     opacity: 1;
   }
 
-  .studio-pill[aria-pressed="true"],
   .landing-dialog-submit {
     background-color: Highlight;
     color: HighlightText;
     border-color: Highlight;
   }
 
-  .studio-panel,
   .landing-dialog {
     background-color: Canvas;
     color: CanvasText;

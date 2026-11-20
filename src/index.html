@@ -57,7 +57,7 @@
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap"
     />
 
-    <!-- Sets the .dark class before first paint, to avoid a flash. Mirrors src/lib/theme.ts. -->
+    <!-- Sets the .dark class and a fresh non-repeating ink palette before first paint to avoid any flash. -->
     <script>
       (() => {
         try {
@@ -68,55 +68,47 @@
               matchMedia("(prefers-color-scheme: dark)").matches);
           document.documentElement.classList.toggle("dark", dark);
         } catch {}
+
+        try {
+          const palettes = ["sumi", "twilight", "nocturne"];
+          const bgByPalette = { sumi: "#f3ece0", twilight: "#dce2ea", nocturne: "#17202b" };
+          const prev = sessionStorage.getItem("susu-palette");
+          const candidates = palettes.filter((p) => p !== prev);
+          const next = candidates[Math.floor(Math.random() * candidates.length)] || "sumi";
+          sessionStorage.setItem("susu-palette", next);
+          document.documentElement.dataset.palette = next;
+          document.documentElement.style.backgroundColor = bgByPalette[next];
+        } catch {}
       })();
     </script>
   </head>
   <body>
-    <div id="root">
-      <main
-        style="min-height:100svh;display:grid;place-items:center;padding:2rem;background:#f3ece0;color:#1c1917;font-family:'Fraunces',Georgia,serif;text-align:center;"
-      >
-        <div>
-          <h1 style="margin:0;font-size:clamp(2.5rem,7vw,4.5rem);font-weight:600;letter-spacing:-0.02em;">
-            susu.dev
-          </h1>
-          <p
-            style="margin:0.75rem auto 0;max-width:34rem;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.25rem;line-height:1.5;color:#4a443d;"
-          >
-            An interactive hand-inked Sumi and Vermilion waterfront cityscape and personal studio on
-            the web.
-          </p>
-        </div>
-      </main>
-    </div>
+    <div id="root"></div>
     <noscript>
-      <style>
-        #root {
-          display: none;
-        }
-      </style>
-      <main
-        style="min-height:100svh;display:grid;place-items:center;padding:2rem;background:#f3ece0;color:#1c1917;font-family:'Fraunces',Georgia,serif;text-align:center;"
-      >
-        <div style="max-width:44rem;width:100%;">
-          <img
-            src="/og-image.svg"
-            alt="susu.dev — Hand-inked Sumi and Vermilion waterfront cityscape"
-            width="1200"
-            height="630"
-            style="width:100%;height:auto;border-radius:8px;box-shadow:0 12px 32px rgba(28,25,23,0.12);"
-          />
-          <h1 style="margin:1.5rem 0 0;font-size:clamp(2.25rem,6vw,3.5rem);font-weight:600;letter-spacing:-0.02em;">
-            susu.dev
-          </h1>
-          <p
-            style="margin:0.75rem auto 0;max-width:34rem;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.25rem;line-height:1.6;color:#4a443d;"
-          >
-            An interactive hand-inked Sumi and Vermilion waterfront cityscape and personal studio.
-            Enable JavaScript to explore the animated ink canvas and palette controls.
-          </p>
-        </div>
-      </main>
+      <div class="nojs">
+        <main
+          style="min-height:100svh;display:grid;place-items:center;padding:2rem;background:#f3ece0;color:#1c1917;font-family:'Fraunces',Georgia,serif;text-align:center;"
+        >
+          <div style="max-width:44rem;width:100%;">
+            <img
+              src="/og-image.svg"
+              alt="susu.dev — Hand-inked Sumi and Vermilion waterfront cityscape"
+              width="1200"
+              height="630"
+              style="width:100%;height:auto;border-radius:8px;box-shadow:0 12px 32px rgba(28,25,23,0.12);"
+            />
+            <h1 style="margin:1.5rem 0 0;font-size:clamp(2.25rem,6vw,3.5rem);font-weight:600;letter-spacing:-0.02em;">
+              susu.dev
+            </h1>
+            <p
+              style="margin:0.75rem auto 0;max-width:34rem;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.25rem;line-height:1.6;color:#4a443d;"
+            >
+              An interactive hand-inked Sumi and Vermilion waterfront cityscape and personal studio.
+              Enable JavaScript to explore the animated ink canvas.
+            </p>
+          </div>
+        </main>
+      </div>
     </noscript>
   </body>
 </html>

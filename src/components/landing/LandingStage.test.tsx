@@ -2,7 +2,7 @@ import { afterEach, expect, rs, test } from "@rstest/core";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { StrictMode } from "react";
-import { LandingStage } from "./LandingStage";
+import { LandingStage, pickNextPalette, resolveInitialPalette } from "./LandingStage";
 import type {
   CityscapeController,
   CityscapeFactory,
@@ -105,9 +105,12 @@ let restoreMediaQuery: (() => void) | null = null;
 afterEach(() => {
   restoreMediaQuery?.();
   restoreMediaQuery = null;
+  delete document.documentElement.dataset.palette;
+  window.sessionStorage.clear();
+  rs.useRealTimers();
 });
 
-test("LandingStage renders accessible structure, single h1, and aria-hidden canvases", () => {
+test("LandingStage renders accessible structure, single h1, aria-hidden canvases, and no Studio pill", () => {
   const mocks = createMockFactories();
   const { container } = render(
     <LandingStage
@@ -125,16 +128,65 @@ test("LandingStage renders accessible structure, single h1, and aria-hidden canv
   for (const canvas of canvases) {
     expect(canvas).toHaveAttribute("aria-hidden", "true");
   }
+
+  expect(screen.queryByRole("button", { name: "Studio" })).not.toBeInTheDocument();
 });
 
-test("LandingStage supports keyboard navigation, lettering replay, studio controls, and dialog pause/resume", async () => {
+test("pickNextPalette cycles randomly without repeating the previous palette and handles storage errors", () => {
+  const randomPick = pickNextPalette();
+  expect(["sumi", "twilight", "nocturne"]).toContain(randomPick);
+  window.sessionStorage.clear();
+
+  const first = pickNextPalette(() => 0);
+  expect(first).toBe("sumi");
+
+  const second = pickNextPalette(() => 0);
+  expect(second).toBe("twilight");
+
+  const third = pickNextPalette(() => 0.99);
+  expect(third).toBe("nocturne");
+
+  // Out-of-bounds random falls back safely to "sumi"
+  expect(pickNextPalette(() => 2)).toBe("sumi");
+
+  // Handles sessionStorage throwing (e.g. restricted privacy contexts)
+  const origStorage = window.sessionStorage;
+  Object.defineProperty(window, "sessionStorage", {
+    configurable: true,
+    get() {
+      throw new Error("storage blocked");
+    },
+  });
+  try {
+    expect(pickNextPalette(() => 0.5)).toBe("twilight");
+  } finally {
+    Object.defineProperty(window, "sessionStorage", {
+      configurable: true,
+      value: origStorage,
+    });
+  }
+});
+
+test("resolveInitialPalette honors explicit prop, then boot dataset, then pickNextPalette", () => {
+  expect(resolveInitialPalette("nocturne")).toBe("nocturne");
+
+  document.documentElement.dataset.palette = "twilight";
+  expect(resolveInitialPalette()).toBe("twilight");
+  expect(document.documentElement.dataset.palette).toBeUndefined();
+
+  document.documentElement.dataset.palette = "invalid";
+  expect(resolveInitialPalette(undefined, () => 0)).toBe("sumi");
+});
+
+test("LandingStage supports keyboard navigation, lettering replay, and dialog pause/resume", async () => {
   const user = userEvent.setup();
   const mocks = createMockFactories();
 
-  const { container } = render(
+  render(
     <LandingStage
       createCityscape={mocks.createCityscape}
       createLettering={mocks.createLettering}
+      initialPalette="sumi"
     />,
   );
 
@@ -166,22 +218,56 @@ test("LandingStage supports keyboard navigation, lettering replay, studio contro
   expect(document.activeElement).toBe(loginButton);
   expect(cityscape.setPaused).toHaveBeenLastCalledWith(false);
 
-  // Open Studio tray and switch palette, medium, and redraw skyline
-  await user.click(screen.getByRole("button", { name: "Studio" }));
-  await user.click(screen.getByRole("button", { name: "Nocturne" }));
-  expect(container.querySelector(".landing-stage")).toHaveAttribute("data-palette", "nocturne");
-  expect(cityscape.setPalette).toHaveBeenCalledWith("nocturne");
-  expect(lettering.setPalette).toHaveBeenCalledWith("nocturne");
-
-  await user.click(screen.getByRole("button", { name: "Pencil" }));
-  expect(lettering.setMedium).toHaveBeenCalledWith("pencil");
-
-  await user.click(screen.getByRole("button", { name: "Redraw Skyline" }));
-  expect(cityscape.regenerate).toHaveBeenCalledTimes(1);
-
   // Pointer move forwards coordinates to cityscape
   fireEvent.pointerMove(window, { clientX: 240, clientY: 180 });
   expect(cityscape.handlePointerMove).toHaveBeenCalledWith(240, 180);
+});
+
+test("LandingStage automatically redraws skyline every 30s unless paused, hidden, or reduced-motion", () => {
+  rs.useFakeTimers();
+  const mq = mockReducedMotion(false);
+  restoreMediaQuery = mq.restore;
+
+  const mocks = createMockFactories();
+  const { unmount } = render(
+    <LandingStage
+      createCityscape={mocks.createCityscape}
+      createLettering={mocks.createLettering}
+      initialPalette="sumi"
+    />,
+  );
+
+  const cityscape = mocks.cityscapes[0];
+  if (!cityscape) {
+    throw new Error("Expected cityscape controller");
+  }
+
+  // Fires automatically after 30 seconds
+  act(() => {
+    rs.advanceTimersByTime(30_000);
+  });
+  expect(cityscape.regenerate).toHaveBeenCalledTimes(1);
+
+  // Skips redraw while reduced motion is active
+  act(() => {
+    mq.dispatchChange(true);
+    rs.advanceTimersByTime(30_000);
+  });
+  expect(cityscape.regenerate).toHaveBeenCalledTimes(1);
+
+  // Resumes redraw when reduced motion turns off
+  act(() => {
+    mq.dispatchChange(false);
+    rs.advanceTimersByTime(30_000);
+  });
+  expect(cityscape.regenerate).toHaveBeenCalledTimes(2);
+
+  // Unmount clears the interval (no leaks)
+  unmount();
+  act(() => {
+    rs.advanceTimersByTime(60_000);
+  });
+  expect(cityscape.regenerate).toHaveBeenCalledTimes(2);
 });
 
 test("LandingStage forwards live prefers-reduced-motion changes to both controllers", () => {
