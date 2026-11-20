@@ -14,8 +14,10 @@ export default defineConfig({
   },
   html: {
     template: "./src/index.html",
-    title: "susu",
-    meta: { "color-scheme": "light dark" },
+    // Keep <title> and all <meta> tags authored in src/index.html so Rsbuild's
+    // defaults (charset, viewport, title) never duplicate or clobber them.
+    title: "susu.dev",
+    meta: () => ({}),
   },
   output: {
     // Hashed filenames under static/ are safe to cache forever; index.html is not.
@@ -23,6 +25,8 @@ export default defineConfig({
     cleanDistPath: true,
   },
   server: {
+    // Copy public/ assets (og-image.svg, robots.txt) cleanly into dist/.
+    publicDir: { name: "public", copyOnBuild: true },
     // Client-side routing: unknown paths serve index.html (dev and preview).
     historyApiFallback: true,
     // Same-origin API in dev: run authsu with `make dev` (:8787).

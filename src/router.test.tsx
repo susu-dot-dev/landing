@@ -6,13 +6,14 @@ import { createRouter, createTestRouter } from "./router";
 
 const renderAt = (path: string) => render(<App router={createTestRouter([path])} />);
 
-test("home renders Hello, world and a working counter", async () => {
+test("home renders full-bleed susu.dev landing stage with Log in trigger", async () => {
   renderAt("/");
-  expect(screen.getByRole("heading", { name: "Hello, world" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 1, name: "susu.dev" })).toBeInTheDocument();
+  expect(screen.queryByRole("banner")).not.toBeInTheDocument();
 
-  const button = screen.getByRole("button", { name: "Clicked 0 times" });
-  await userEvent.click(button);
-  expect(screen.getByRole("button", { name: "Clicked 1 times" })).toBeInTheDocument();
+  const loginButton = screen.getByRole("button", { name: "Log in" });
+  await userEvent.click(loginButton);
+  expect(screen.getByRole("dialog", { name: "Sign in to susu.dev" })).toBeInTheDocument();
 });
 
 test("unknown paths render the not-found page, which links home", async () => {
@@ -20,13 +21,13 @@ test("unknown paths render the not-found page, which links home", async () => {
   expect(screen.getByRole("heading", { name: "Page not found" })).toBeInTheDocument();
 
   await userEvent.click(screen.getByRole("link", { name: "Back to home" }));
-  expect(screen.getByRole("heading", { name: "Hello, world" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 1, name: "susu.dev" })).toBeInTheDocument();
 });
 
-test("the layout brand links home", async () => {
+test("the layout brand links home from non-root routes", async () => {
   renderAt("/missing");
-  await userEvent.click(screen.getByRole("link", { name: "susu" }));
-  expect(screen.getByRole("heading", { name: "Hello, world" })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("link", { name: "susu.dev" }));
+  expect(screen.getByRole("heading", { level: 1, name: "susu.dev" })).toBeInTheDocument();
 });
 
 test("createRouter builds a browser router over the same routes", () => {

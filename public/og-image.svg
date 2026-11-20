@@ -1,0 +1,175 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="susu.dev — Hand-inked Sumi and Vermilion waterfront cityscape">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f7f1e6" />
+      <stop offset="68%" stop-color="#f3ece0" />
+      <stop offset="100%" stop-color="#e5dac7" />
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#dfd3be" />
+      <stop offset="35%" stop-color="#cfc2ab" />
+      <stop offset="100%" stop-color="#bfb097" />
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c84b31" stop-opacity="0.22" />
+      <stop offset="60%" stop-color="#c84b31" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#c84b31" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="lanternGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e86a42" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#e86a42" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Paper sky -->
+  <rect width="1200" height="450" fill="url(#sky)" />
+
+  <!-- Subtle vermilion sun wash -->
+  <circle cx="920" cy="185" r="170" fill="url(#sunGlow)" />
+  <circle cx="920" cy="185" r="54" fill="#c84b31" opacity="0.82" />
+
+  <!-- Distant ink-wash hills -->
+  <path
+    d="M0 390 Q160 335 320 375 T660 365 T980 350 T1200 375 L1200 450 L0 450 Z"
+    fill="#d8cdb9"
+  />
+  <path
+    d="M0 412 Q210 368 420 398 T840 382 T1200 400 L1200 450 L0 450 Z"
+    fill="#c5b8a1"
+  />
+
+  <!-- Midground skyline wash -->
+  <g fill="#6b6359" opacity="0.62">
+    <rect x="65" y="340" width="44" height="110" />
+    <polygon points="58,340 87,316 116,340" />
+    <rect x="132" y="318" width="56" height="132" />
+    <rect x="215" y="352" width="48" height="98" />
+    <rect x="330" y="330" width="64" height="120" />
+    <polygon points="324,330 362,304 400,330" />
+    <rect x="740" y="324" width="58" height="126" />
+    <rect x="815" y="346" width="52" height="104" />
+    <rect x="960" y="315" width="62" height="135" />
+    <polygon points="952,315 991,290 1030,315" />
+    <rect x="1045" y="342" width="68" height="108" />
+  </g>
+
+  <!-- Chimney smoke wisps -->
+  <g fill="none" stroke="#8a8175" stroke-width="2" stroke-linecap="round" opacity="0.45">
+    <path d="M168 312 C164 294 178 282 173 262 C169 248 182 238 179 224" />
+    <path d="M900 326 C896 308 910 296 905 278 C901 264 912 252 909 238" />
+  </g>
+
+  <!-- Foreground hand-inked waterfront buildings -->
+  <g fill="#1f1c19" stroke="#161311" stroke-width="1.5" stroke-linejoin="round">
+    <!-- Left waterfront cluster -->
+    <path d="M0 370 L58 370 L58 450 L0 450 Z" />
+    <path d="M48 348 L126 348 L126 450 L48 450 Z" />
+    <path d="M40 348 L87 322 L134 348 Z" />
+    <path d="M122 365 L196 365 L196 450 L122 450 Z" />
+    <path d="M192 336 L262 336 L262 450 L192 450 Z" />
+    <path d="M184 336 L227 312 L270 336 Z" />
+    <path d="M258 378 L322 378 L322 450 L258 450 Z" />
+
+    <!-- Right waterfront cluster -->
+    <path d="M848 372 L918 372 L918 450 L848 450 Z" />
+    <path d="M912 340 L988 340 L988 450 L912 450 Z" />
+    <path d="M904 340 L950 314 L996 340 Z" />
+    <path d="M984 360 L1064 360 L1064 450 L984 450 Z" />
+    <path d="M1060 332 L1142 332 L1142 450 L1060 450 Z" />
+    <path d="M1052 332 L1101 306 L1150 332 Z" />
+    <path d="M1138 368 L1200 368 L1200 450 L1138 450 Z" />
+  </g>
+
+  <!-- Arched waterfront bridge -->
+  <g fill="#26221e">
+    <path d="M312 418 Q585 376 858 418 L858 430 Q585 390 312 430 Z" />
+    <path d="M352 426 L364 426 L364 452 L352 452 Z" />
+    <path d="M472 412 L486 412 L486 452 L472 452 Z" />
+    <path d="M684 412 L698 412 L698 452 L684 452 Z" />
+    <path d="M806 426 L818 426 L818 452 L806 452 Z" />
+    <!-- Bridge railing -->
+    <path d="M312 410 Q585 368 858 410" fill="none" stroke="#26221e" stroke-width="2" />
+  </g>
+
+  <!-- Warm lit windows -->
+  <g fill="#f0bd6e" opacity="0.9">
+    <rect x="68" y="366" width="11" height="15" rx="1" />
+    <rect x="92" y="366" width="11" height="15" rx="1" />
+    <rect x="68" y="394" width="11" height="15" rx="1" />
+    <rect x="144" y="384" width="12" height="14" rx="1" />
+    <rect x="168" y="384" width="12" height="14" rx="1" />
+    <rect x="210" y="354" width="11" height="16" rx="1" />
+    <rect x="234" y="354" width="11" height="16" rx="1" />
+    <rect x="210" y="384" width="11" height="16" rx="1" />
+    <rect x="282" y="396" width="10" height="14" rx="1" />
+
+    <rect x="872" y="390" width="11" height="14" rx="1" />
+    <rect x="932" y="358" width="12" height="16" rx="1" />
+    <rect x="956" y="358" width="12" height="16" rx="1" />
+    <rect x="932" y="388" width="12" height="16" rx="1" />
+    <rect x="1008" y="378" width="11" height="15" rx="1" />
+    <rect x="1082" y="352" width="12" height="16" rx="1" />
+    <rect x="1108" y="352" width="12" height="16" rx="1" />
+    <rect x="1082" y="384" width="12" height="16" rx="1" />
+  </g>
+
+  <!-- Vermilion lanterns along waterfront & bridge -->
+  <g>
+    <circle cx="316" cy="404" r="22" fill="url(#lanternGlow)" />
+    <circle cx="316" cy="404" r="5" fill="#c84b31" />
+    <circle cx="585" cy="378" r="26" fill="url(#lanternGlow)" />
+    <circle cx="585" cy="378" r="5.5" fill="#c84b31" />
+    <circle cx="854" cy="404" r="22" fill="url(#lanternGlow)" />
+    <circle cx="854" cy="404" r="5" fill="#c84b31" />
+  </g>
+
+  <!-- Still ink-wash water -->
+  <rect x="0" y="450" width="1200" height="180" fill="url(#water)" />
+  <line x1="0" y1="450" x2="1200" y2="450" stroke="#26221e" stroke-width="2" />
+
+  <!-- Subtle ink-wash reflections in water -->
+  <g stroke-linecap="round">
+    <line x1="60" y1="468" x2="290" y2="468" stroke="#26221e" stroke-width="3" opacity="0.22" />
+    <line x1="90" y1="486" x2="250" y2="486" stroke="#26221e" stroke-width="2" opacity="0.16" />
+    <line x1="860" y1="468" x2="1140" y2="468" stroke="#26221e" stroke-width="3" opacity="0.22" />
+    <line x1="900" y1="488" x2="1110" y2="488" stroke="#26221e" stroke-width="2" opacity="0.16" />
+    <line x1="340" y1="478" x2="830" y2="478" stroke="#26221e" stroke-width="2" opacity="0.14" />
+    <!-- Lantern reflections -->
+    <line x1="306" y1="496" x2="326" y2="496" stroke="#c84b31" stroke-width="3" opacity="0.45" />
+    <line x1="572" y1="504" x2="598" y2="504" stroke="#c84b31" stroke-width="3.5" opacity="0.45" />
+    <line x1="844" y1="496" x2="864" y2="496" stroke="#c84b31" stroke-width="3" opacity="0.45" />
+    <!-- Sun shimmer -->
+    <line x1="896" y1="528" x2="944" y2="528" stroke="#c84b31" stroke-width="2.5" opacity="0.32" />
+    <line x1="908" y1="544" x2="934" y2="544" stroke="#c84b31" stroke-width="2" opacity="0.24" />
+  </g>
+
+  <!-- Moored wooden boat -->
+  <g fill="#1f1c19">
+    <path d="M512 526 Q565 544 622 524 L610 538 Q565 550 522 538 Z" />
+    <line x1="588" y1="526" x2="594" y2="496" stroke="#1f1c19" stroke-width="2.5" />
+    <circle cx="594" cy="498" r="4" fill="#c84b31" />
+  </g>
+
+  <!-- Editorial title & hanko accent -->
+  <g text-anchor="middle">
+    <text
+      x="600"
+      y="206"
+      fill="#1c1917"
+      font-family="Fraunces, Georgia, 'Times New Roman', serif"
+      font-size="96"
+      font-weight="600"
+      letter-spacing="-2"
+    >susu.dev</text>
+    <rect x="572" y="228" width="56" height="4" rx="2" fill="#c84b31" />
+    <text
+      x="600"
+      y="268"
+      fill="#4a443d"
+      font-family="'Cormorant Garamond', Georgia, 'Times New Roman', serif"
+      font-size="28"
+      font-style="italic"
+      letter-spacing="1.5"
+    >hand-inked waterfront sketch &amp; personal studio</text>
+  </g>
+</svg>
