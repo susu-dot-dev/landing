@@ -1,4 +1,5 @@
 import { afterEach, expect, rs, test } from "@rstest/core";
+import { authUrl } from "./authUrl";
 import { fetchSession, fetchUserName } from "./session";
 
 const json = (body: unknown, status = 200) =>
@@ -28,7 +29,7 @@ test("fetchUserName reads profile.name and escapes the id", async () => {
     return new Response(JSON.stringify({ profile: { name: "Ada" } }));
   }) as typeof fetch;
   expect(await fetchUserName("a/b", fetchFn)).toBe("Ada");
-  expect(url).toBe("/api/user/a%2Fb");
+  expect(url).toBe(authUrl("/api/user/a%2Fb"));
 });
 
 test("fetchUserName is null when refused, nameless, or failing", async () => {

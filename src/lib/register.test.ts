@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, rs, test } from "@rstest/core";
+import { authUrl } from "./authUrl";
 import {
   type CredentialsApi,
   classifyCredentialError,
@@ -167,7 +168,10 @@ describe("register", () => {
     ]);
     expect(await register(input, deps)).toEqual({ ok: true, userId: "u-1", role: "admin" });
 
-    expect(requests.map((r) => r.url)).toEqual(["/api/register/begin", "/api/register/finish"]);
+    expect(requests.map((r) => r.url)).toEqual([
+      authUrl("/api/register/begin"),
+      authUrl("/api/register/finish"),
+    ]);
     for (const { init } of requests) {
       expect(init.method).toBe("POST");
       expect(init.credentials).toBe("include");
@@ -199,7 +203,7 @@ describe("register", () => {
       ok: false,
       code: "invitation_rejected",
     });
-    expect(calls).toEqual(["/api/register/begin"]);
+    expect(calls).toEqual([authUrl("/api/register/begin")]);
   });
 
   test("defaults to the browser's credentials and statics", async () => {
@@ -355,6 +359,6 @@ describe("register with the browser globals", () => {
       userId: "u",
       role: "member",
     });
-    expect(urls).toEqual(["/api/register/begin", "/api/register/finish"]);
+    expect(urls).toEqual([authUrl("/api/register/begin"), authUrl("/api/register/finish")]);
   });
 });

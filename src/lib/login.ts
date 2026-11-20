@@ -8,6 +8,8 @@
  * the server (GET /api/session, see `fetchSession` in ./session).
  */
 
+import { authUrl } from "./authUrl";
+
 /** What the UI branches on after a login or logout attempt. */
 export type LoginErrorCode =
   /** The server refused the assertion. Deliberately one answer for every cause. */
@@ -127,7 +129,7 @@ export async function login(deps: LoginDeps = {}): Promise<LoginResult> {
     return { ok: false, code: "unsupported" };
   }
 
-  const begin = await post(fetchFn, "/api/login/begin");
+  const begin = await post(fetchFn, authUrl("/api/login/begin"));
   if (begin.kind !== "ok") return toFailure(begin);
   if (!isRequestOptions(begin.body)) return { ok: false, code: "unknown" };
 
@@ -141,7 +143,7 @@ export async function login(deps: LoginDeps = {}): Promise<LoginResult> {
   if (!isPublicKeyCredential(credential)) return { ok: false, code: "authenticator_failed" };
 
   // Posted unmodified: the server accepts toJSON() output as-is.
-  const finish = await post(fetchFn, "/api/login/finish", credential.toJSON());
+  const finish = await post(fetchFn, authUrl("/api/login/finish"), credential.toJSON());
   if (finish.kind !== "ok") return toFailure(finish);
   return { ok: true };
 }
@@ -153,7 +155,7 @@ export async function login(deps: LoginDeps = {}): Promise<LoginResult> {
 export async function logout(
   fetchFn: typeof fetch = (...args) => fetch(...args),
 ): Promise<LoginResult> {
-  const result = await post(fetchFn, "/api/logout");
+  const result = await post(fetchFn, authUrl("/api/logout"));
   if (result.kind === "ok") return { ok: true };
   if (result.kind === "error" && result.status === 401) return { ok: true };
   return toFailure(result);

@@ -6,6 +6,8 @@
  * only way to get one is an invitation code.
  */
 
+import { authUrl } from "./authUrl";
+
 /** Matches authsu's server-side caps. */
 export const MAX_NAME_BYTES = 128;
 export const MAX_CODE_BYTES = 256;
@@ -241,7 +243,7 @@ export async function register(
   const invitationCode = normalizeCode(input.code);
   const name = normalizeName(input.name);
 
-  const begin = await postJson(fetchFn, "/api/register/begin", { invitationCode, name });
+  const begin = await postJson(fetchFn, authUrl("/api/register/begin"), { invitationCode, name });
   if (begin.kind === "error") return { ok: false, code: begin.code };
   if (!isCreationOptions(begin.body)) return { ok: false, code: "unknown" };
 
@@ -256,7 +258,7 @@ export async function register(
 
   const finish = await postJson(
     fetchFn,
-    "/api/register/finish",
+    authUrl("/api/register/finish"),
     {
       invitationCode,
       name,

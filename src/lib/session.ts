@@ -6,6 +6,8 @@
  * server exposes at GET /api/user/{id}; that route needs the `user:read` scope.
  */
 
+import { authUrl } from "./authUrl";
+
 export type SessionInfo = { userId: string; role: string };
 
 /** GET /api/session. Returns null when signed out or on any failure. Never throws. */
@@ -13,7 +15,7 @@ export async function fetchSession(
   fetchFn: typeof fetch = (...args) => fetch(...args),
 ): Promise<SessionInfo | null> {
   try {
-    const response = await fetchFn("/api/session", {
+    const response = await fetchFn(authUrl("/api/session"), {
       headers: { Accept: "application/json" },
       credentials: "include",
       cache: "no-store",
@@ -36,7 +38,7 @@ export async function fetchUserName(
   fetchFn: typeof fetch = (...args) => fetch(...args),
 ): Promise<string | null> {
   try {
-    const response = await fetchFn(`/api/user/${encodeURIComponent(userId)}`, {
+    const response = await fetchFn(authUrl(`/api/user/${encodeURIComponent(userId)}`), {
       headers: { Accept: "application/json" },
       credentials: "include",
       cache: "no-store",

@@ -37,8 +37,9 @@ pnpm build          # static bundle in dist/
 pnpm preview        # serve dist/ locally
 ```
 
-Dev proxies `/api` to `http://localhost:8787` (authsu's `make dev`), so
-requests stay same-origin and cookies work without CORS.
+Auth requests target `http://localhost:8787` (authsu's `make dev`) when running
+locally (`localhost` / `127.0.0.1` / `::1`) and `https://auth.susu.dev` in
+production.
 
 ## Layout
 

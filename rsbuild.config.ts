@@ -29,9 +29,5 @@ export default defineConfig({
     publicDir: { name: "public", copyOnBuild: true },
     // Client-side routing: unknown paths serve index.html (dev and preview).
     historyApiFallback: true,
-    // Same-origin API in dev: run authsu with `make dev` (:8787).
-    proxy: {
-      "/api": { target: "http://localhost:8787", changeOrigin: true },
-    },
   },
 });

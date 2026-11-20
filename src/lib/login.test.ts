@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, rs, test } from "@rstest/core";
+import { authUrl } from "./authUrl";
 import {
   classifyAssertionError,
   classifyLoginError,
@@ -56,7 +57,10 @@ describe("login", () => {
     ]);
     const result = await login({ fetchFn, credentials: credentials(), statics });
     expect(result).toEqual({ ok: true });
-    expect(calls.map((c) => c.url)).toEqual(["/api/login/begin", "/api/login/finish"]);
+    expect(calls.map((c) => c.url)).toEqual([
+      authUrl("/api/login/begin"),
+      authUrl("/api/login/finish"),
+    ]);
     expect(calls[0]?.init?.body).toBeUndefined();
     expect(calls[1]?.init?.body).toBe(JSON.stringify({ id: "cred", type: "public-key" }));
     expect(calls.every((c) => c.init?.credentials === "include")).toBe(true);
@@ -132,7 +136,7 @@ describe("logout", () => {
   test("succeeds on 204 and posts with credentials", async () => {
     const { calls, fetchFn } = fetcher([new Response(null, { status: 204 })]);
     expect(await logout(fetchFn)).toEqual({ ok: true });
-    expect(calls[0]?.url).toBe("/api/logout");
+    expect(calls[0]?.url).toBe(authUrl("/api/logout"));
     expect(calls[0]?.init?.credentials).toBe("include");
   });
 
@@ -174,7 +178,7 @@ describe("login with the browser globals", () => {
     rs.stubGlobal("navigator", { credentials: credentials() });
     rs.stubGlobal("PublicKeyCredential", statics);
     expect(await login()).toEqual({ ok: true });
-    expect(urls).toEqual(["/api/login/begin", "/api/login/finish"]);
+    expect(urls).toEqual([authUrl("/api/login/begin"), authUrl("/api/login/finish")]);
   });
 
   test("logout uses global fetch", async () => {
