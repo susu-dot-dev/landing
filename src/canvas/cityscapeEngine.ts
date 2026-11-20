@@ -80,6 +80,8 @@ const ARCHETYPES: readonly BuildingArchetype[] = [
 const WINDOW_GLOW_SIZE = 32;
 const LANTERN_GLOW_SIZE = 34;
 const MINOR_HEIGHT_RESIZE_THRESHOLD = 80;
+const SCENE_OVERSCAN_X = 8;
+const SCENE_OVERSCAN_Y = 5;
 
 export class InkCityscape implements CityscapeController {
   private readonly canvas: HTMLCanvasElement;
@@ -258,8 +260,8 @@ export class InkCityscape implements CityscapeController {
     this.canvas.height = Math.round(this.height * this.dpr);
     this.waterY = Math.round(this.height * 0.695);
 
-    this.upperSceneCanvas.width = this.canvas.width;
-    this.upperSceneCanvas.height = this.canvas.height;
+    this.upperSceneCanvas.width = Math.round((this.width + SCENE_OVERSCAN_X * 2) * this.dpr);
+    this.upperSceneCanvas.height = Math.round((this.height + SCENE_OVERSCAN_Y * 2) * this.dpr);
 
     this.rebuildScene();
     this.renderFrame(this.reducedMotion ? this.startTime : performance.now());
@@ -482,16 +484,33 @@ export class InkCityscape implements CityscapeController {
     this.motes = [];
 
     ctx.save();
-    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
+    ctx.setTransform(
+      this.dpr,
+      0,
+      0,
+      this.dpr,
+      SCENE_OVERSCAN_X * this.dpr,
+      SCENE_OVERSCAN_Y * this.dpr,
+    );
+    ctx.clearRect(
+      -SCENE_OVERSCAN_X,
+      -SCENE_OVERSCAN_Y,
+      w + SCENE_OVERSCAN_X * 2,
+      h + SCENE_OVERSCAN_Y * 2,
+    );
 
     // 1. Sky Paper Gradient
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, wy);
+    const skyGrad = ctx.createLinearGradient(0, -SCENE_OVERSCAN_Y, 0, wy);
     skyGrad.addColorStop(0, p.skyTop);
     skyGrad.addColorStop(0.56, p.skyMid);
     skyGrad.addColorStop(1, p.skyHorizon);
     ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, w, wy + 2);
+    ctx.fillRect(
+      -SCENE_OVERSCAN_X,
+      -SCENE_OVERSCAN_Y,
+      w + SCENE_OVERSCAN_X * 2,
+      wy + SCENE_OVERSCAN_Y + 2,
+    );
 
     // 2. Atmospheric ink-wash clouds
     for (let i = 0; i < 11; i++) {
@@ -648,7 +667,7 @@ export class InkCityscape implements CityscapeController {
     mist.addColorStop(1, p.skyHorizon);
     ctx.fillStyle = mist;
     ctx.globalAlpha = 0.52;
-    ctx.fillRect(0, wy - wy * 0.28, w, wy * 0.28);
+    ctx.fillRect(-SCENE_OVERSCAN_X, wy - wy * 0.28, w + SCENE_OVERSCAN_X * 2, wy * 0.28);
     ctx.restore();
   }
 
@@ -1416,8 +1435,8 @@ export class InkCityscape implements CityscapeController {
     const quayTop = wy - 14;
     const pilings: number[] = [];
     const walls: readonly [number, number][] = [
-      [0, w * 0.385],
-      [w * 0.615, w],
+      [-SCENE_OVERSCAN_X, w * 0.385],
+      [w * 0.615, w + SCENE_OVERSCAN_X],
     ];
 
     for (const [x1, x2] of walls) {
@@ -1438,7 +1457,11 @@ export class InkCityscape implements CityscapeController {
       }
     }
 
-    this.inkLine(ctx, 0, wy, w, wy, rng, { width: 1.35, alpha: 0.72, wobble: 0.6 });
+    this.inkLine(ctx, -SCENE_OVERSCAN_X, wy, w + SCENE_OVERSCAN_X, wy, rng, {
+      width: 1.35,
+      alpha: 0.72,
+      wobble: 0.6,
+    });
     return pilings;
   }
 
@@ -1455,21 +1478,21 @@ export class InkCityscape implements CityscapeController {
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(0, wy, w, waterH + 10);
+    ctx.rect(-SCENE_OVERSCAN_X, wy, w + SCENE_OVERSCAN_X * 2, waterH + SCENE_OVERSCAN_Y + 10);
     ctx.clip();
 
-    const waterGrad = ctx.createLinearGradient(0, wy, 0, h);
+    const waterGrad = ctx.createLinearGradient(0, wy, 0, h + SCENE_OVERSCAN_Y);
     waterGrad.addColorStop(0, p.waterTop);
     waterGrad.addColorStop(0.5, p.waterMid);
     waterGrad.addColorStop(1, p.waterDeep);
     ctx.fillStyle = waterGrad;
-    ctx.fillRect(0, wy, w, waterH + 10);
+    ctx.fillRect(-SCENE_OVERSCAN_X, wy, w + SCENE_OVERSCAN_X * 2, waterH + SCENE_OVERSCAN_Y + 10);
 
     const shoreShadow = ctx.createLinearGradient(0, wy, 0, wy + Math.min(46, waterH * 0.24));
     shoreShadow.addColorStop(0, p.waterShoreWash);
     shoreShadow.addColorStop(1, "rgba(0, 0, 0, 0)");
     ctx.fillStyle = shoreShadow;
-    ctx.fillRect(0, wy, w, Math.min(46, waterH * 0.24));
+    ctx.fillRect(-SCENE_OVERSCAN_X, wy, w + SCENE_OVERSCAN_X * 2, Math.min(46, waterH * 0.24));
 
     for (let i = 0; i < 8; i++) {
       const cx = rng() * w;
@@ -1632,7 +1655,13 @@ export class InkCityscape implements CityscapeController {
     // 1. Hand-Inked Cityscape + Still Ink-Wash Water
     ctx.save();
     ctx.translate(px * 0.4, py * 0.3);
-    ctx.drawImage(this.upperSceneCanvas, -8, -5, w + 16, h + 10);
+    ctx.drawImage(
+      this.upperSceneCanvas,
+      -SCENE_OVERSCAN_X,
+      -SCENE_OVERSCAN_Y,
+      w + SCENE_OVERSCAN_X * 2,
+      h + SCENE_OVERSCAN_Y * 2,
+    );
     ctx.restore();
 
     // 2. Animated Chimney Smoke Wisps

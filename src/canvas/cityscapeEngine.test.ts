@@ -378,6 +378,24 @@ describe("InkCityscape", () => {
     removeSpy.mockRestore();
   });
 
+  it("maps upperSceneCanvas 1:1 with overscan so dynamic windows align with baked frames", () => {
+    const { canvas, ctx } = makeMainCanvas(1280, 720);
+    const engine = new InkCityscape(canvas, { reducedMotion: true });
+
+    const upperSceneCanvas = createdCanvases[0] as HTMLCanvasElement;
+    const upperSceneCtx = ctxByCanvas.get(upperSceneCanvas) as MockContext2D;
+
+    // dpr = 2, overscan = (8, 5) -> physical buffer is (1280 + 16) * 2 by (720 + 10) * 2
+    expect(upperSceneCanvas.width).toBe((1280 + 16) * 2);
+    expect(upperSceneCanvas.height).toBe((720 + 10) * 2);
+    expect(upperSceneCtx.setTransform).toHaveBeenCalledWith(2, 0, 0, 2, 16, 10);
+
+    // Composited 1:1 at (-8, -5, w + 16, h + 10) so scene coordinates match dynamic overlays
+    expect(ctx.drawImage).toHaveBeenCalledWith(upperSceneCanvas, -8, -5, 1280 + 16, 720 + 10);
+
+    engine.dispose();
+  });
+
   it("handles null 2D context gracefully on main and offscreen canvases", () => {
     const { canvas: nullMain } = makeMainCanvas(800, 600, false);
     const engine1 = new InkCityscape(nullMain);
