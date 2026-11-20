@@ -20,7 +20,9 @@
     "test:watch": "rstest watch",
     "coverage": "rstest run --coverage",
     "check": "pnpm run lint && pnpm run typecheck && pnpm run coverage",
-    "ci": "pnpm run check && pnpm run build"
+    "ci": "pnpm run check && pnpm run build",
+    "deploy": "wrangler deploy",
+    "cf-preview": "wrangler dev"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.5.0",
@@ -48,6 +50,7 @@
     "@types/react-dom": "^19.3.0",
     "happy-dom": "^21.0.4",
     "tailwindcss": "^4.3.5",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "wrangler": "^4.165.0"
   }
 }
