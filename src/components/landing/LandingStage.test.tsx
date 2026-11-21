@@ -410,3 +410,43 @@ test("LandingStage renders safely when no engine factories are provided", () => 
   render(<LandingStage />);
   expect(screen.getByRole("heading", { level: 1, name: "susu.dev" })).toBeInTheDocument();
 });
+
+test("LandingStage cycles palettes when the bare background is clicked, but not controls", () => {
+  const mocks = createMockFactories();
+  const { container } = render(
+    <LandingStage
+      createCityscape={mocks.createCityscape}
+      createLettering={mocks.createLettering}
+      initialPalette="sumi"
+    />,
+  );
+  const stage = container.querySelector(".landing-stage") as HTMLElement;
+  expect(stage.dataset.palette).toBe("sumi");
+
+  fireEvent.click(stage);
+  expect(stage.dataset.palette).toBe("twilight");
+  fireEvent.click(stage);
+  expect(stage.dataset.palette).toBe("nocturne");
+  fireEvent.click(stage);
+  expect(stage.dataset.palette).toBe("sumi");
+
+  fireEvent.click(screen.getByRole("button", { name: "Register" }));
+  expect(stage.dataset.palette).toBe("sumi");
+});
+
+test("LandingStage opens the register dialog from the Register link and restores focus", async () => {
+  const mocks = createMockFactories();
+  render(
+    <LandingStage
+      createCityscape={mocks.createCityscape}
+      createLettering={mocks.createLettering}
+      initialPalette="sumi"
+    />,
+  );
+  const register = screen.getByRole("button", { name: "Register" });
+  await userEvent.click(register);
+  expect(screen.getByRole("dialog", { name: "Create your account" })).toBeInTheDocument();
+
+  fireEvent.keyDown(screen.getByRole("dialog", { name: "Create your account" }), { key: "Escape" });
+  expect(document.activeElement).toBe(register);
+});

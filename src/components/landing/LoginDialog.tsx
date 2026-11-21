@@ -23,11 +23,13 @@ import { fetchSession, fetchUserName } from "@/lib/session";
 
 export interface LoginDialogProps {
   open: boolean;
+  /** Which view to open on. "login" starts the passkey ceremony at once; "register" does not. */
+  mode?: View;
   onClose: () => void;
   triggerRef?: RefObject<HTMLButtonElement | null>;
 }
 
-type View = "login" | "register";
+export type View = "login" | "register";
 
 /** `idle` is only seen in the login view before the ceremony starts, or after a register. */
 type Status = { kind: "idle" } | { kind: "waiting" } | { kind: "error"; message: string };
@@ -40,7 +42,7 @@ function maskCode(code: string): string {
   return `${INVITE_CODE_PREFIX}••••${tail}`;
 }
 
-export function LoginDialog({ open, onClose, triggerRef }: LoginDialogProps) {
+export function LoginDialog({ open, mode = "login", onClose, triggerRef }: LoginDialogProps) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const wasOpenRef = useRef(false);
   // Guards against starting a second ceremony while one is in flight.
@@ -51,6 +53,9 @@ export function LoginDialog({ open, onClose, triggerRef }: LoginDialogProps) {
   onCloseRef.current = onClose;
   const triggerRefRef = useRef(triggerRef);
   triggerRefRef.current = triggerRef;
+  // Read when the dialog opens; changing it while open must not restart anything.
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
 
   const titleId = useId();
   const descId = useId();
@@ -126,7 +131,7 @@ export function LoginDialog({ open, onClose, triggerRef }: LoginDialogProps) {
 
     if (open) {
       wasOpenRef.current = true;
-      setView("login");
+      setView(modeRef.current);
       setNotice("");
       setStatus(IDLE);
       if (typeof dialog.showModal === "function") {
@@ -134,7 +139,7 @@ export function LoginDialog({ open, onClose, triggerRef }: LoginDialogProps) {
       } else {
         dialog.setAttribute("open", "");
       }
-      void runLogin();
+      if (modeRef.current === "login") void runLogin();
     } else {
       if (dialog.open) {
         if (typeof dialog.close === "function") {
@@ -152,12 +157,6 @@ export function LoginDialog({ open, onClose, triggerRef }: LoginDialogProps) {
       }
     }
   }, [open, runLogin]);
-
-  const switchView = (next: View) => {
-    setView(next);
-    setStatus(IDLE);
-    setNotice("");
-  };
 
   const handleCancel = (event: SyntheticEvent<HTMLDialogElement>) => {
     event.preventDefault();
@@ -262,17 +261,6 @@ export function LoginDialog({ open, onClose, triggerRef }: LoginDialogProps) {
                 {status.kind === "error" ? "Try again" : "Log in"}
               </button>
             )}
-
-            <p className="landing-dialog-switch">
-              <button
-                type="button"
-                className="landing-dialog-link"
-                disabled={waiting}
-                onClick={() => switchView("register")}
-              >
-                Need to create an account?
-              </button>
-            </p>
           </div>
         ) : (
           <form className="landing-dialog-form" onSubmit={handleRegisterSubmit} noValidate>
@@ -358,17 +346,6 @@ export function LoginDialog({ open, onClose, triggerRef }: LoginDialogProps) {
             <button type="submit" className="landing-dialog-submit" disabled={!canRegister}>
               {status.kind === "error" ? "Try again" : "Create account"}
             </button>
-
-            <p className="landing-dialog-switch">
-              <button
-                type="button"
-                className="landing-dialog-link"
-                disabled={waiting}
-                onClick={() => switchView("login")}
-              >
-                Already have an account?
-              </button>
-            </p>
           </form>
         )}
       </div>

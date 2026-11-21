@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type MouseEvent, useCallback, useEffect, useRef, useState } from "react";
 import { IllustratorLettering, InkCityscape } from "@/canvas";
-import { LoginDialog } from "./LoginDialog";
+import { type View as DialogMode, LoginDialog } from "./LoginDialog";
 import {
   type CityscapeController,
   type CityscapeFactory,
@@ -83,13 +83,15 @@ export function LandingStage({
   initialMedium = "marker",
   redrawIntervalMs = DEFAULT_REDRAW_INTERVAL_MS,
 }: LandingStageProps) {
-  const [palette] = useState<PaletteKey>(() => resolveInitialPalette(initialPalette));
+  const [palette, setPalette] = useState<PaletteKey>(() => resolveInitialPalette(initialPalette));
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<DialogMode>("login");
 
   const stageRef = useRef<HTMLDivElement | null>(null);
   const cityscapeCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const letteringCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const loginTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const registerTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const cityscapeRef = useRef<CityscapeController | null>(null);
   const letteringRef = useRef<LetteringController | null>(null);
@@ -184,7 +186,28 @@ export function LandingStage({
   }, []);
 
   const handleOpenLogin = useCallback(() => {
+    setDialogMode("login");
     setIsLoginOpen(true);
+  }, []);
+
+  const handleOpenRegister = useCallback(() => {
+    setDialogMode("register");
+    setIsLoginOpen(true);
+  }, []);
+
+  // Clicking the bare background (not a control or the dialog) cycles to the next palette.
+  const handleStageClick = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    if ((event.target as Element).closest("button, a, input, dialog")) return;
+    setPalette((current) => {
+      const next =
+        PALETTE_KEYS[(PALETTE_KEYS.indexOf(current) + 1) % PALETTE_KEYS.length] ?? "sumi";
+      try {
+        window.sessionStorage.setItem(PALETTE_STORAGE_KEY, next);
+      } catch {
+        // Ignore storage failures in restricted browsing contexts.
+      }
+      return next;
+    });
   }, []);
 
   const handleCloseLogin = useCallback(() => {
@@ -192,7 +215,9 @@ export function LandingStage({
   }, []);
 
   return (
-    <div ref={stageRef} className="landing-stage" data-palette={palette}>
+    // Pointer-only shortcut on a decorative background; the palette is not essential to use the page.
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: see above
+    <div ref={stageRef} className="landing-stage" data-palette={palette} onClick={handleStageClick}>
       {/* Hidden SVG filter definition for the static hand-inked button frame */}
       <svg className="svg-defs" aria-hidden="true" focusable="false">
         <defs>
@@ -268,11 +293,28 @@ export function LandingStage({
               <span className="btn-seal" aria-hidden="true" />
               <span className="btn-label">Log in</span>
             </button>
+            <p className="auth-register-prompt">
+              New here?{" "}
+              <button
+                ref={registerTriggerRef}
+                type="button"
+                className="auth-register-link"
+                aria-haspopup="dialog"
+                onClick={handleOpenRegister}
+              >
+                Register
+              </button>
+            </p>
           </div>
         </div>
       </main>
 
-      <LoginDialog open={isLoginOpen} onClose={handleCloseLogin} triggerRef={loginTriggerRef} />
+      <LoginDialog
+        open={isLoginOpen}
+        mode={dialogMode}
+        onClose={handleCloseLogin}
+        triggerRef={dialogMode === "register" ? registerTriggerRef : loginTriggerRef}
+      />
     </div>
   );
 }

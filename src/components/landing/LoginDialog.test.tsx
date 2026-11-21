@@ -33,7 +33,7 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
-function DialogHarness() {
+function DialogHarness({ mode }: { mode?: "login" | "register" }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   return (
@@ -41,7 +41,7 @@ function DialogHarness() {
       <button ref={triggerRef} type="button" onClick={() => setOpen(true)}>
         Log in
       </button>
-      <LoginDialog open={open} onClose={() => setOpen(false)} triggerRef={triggerRef} />
+      <LoginDialog open={open} mode={mode} onClose={() => setOpen(false)} triggerRef={triggerRef} />
     </div>
   );
 }
@@ -72,7 +72,6 @@ test("opening the dialog launches the passkey immediately and shows the waiting 
   expect(screen.getByText("Waiting for your passkey…")).toBeInTheDocument();
   // Nothing to click while the browser owns the prompt.
   expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Need to create an account?" })).toBeDisabled();
 
   await act(async () => pending.resolve({ ok: true }));
 });
@@ -115,31 +114,28 @@ test("a login failure shows the error, and Try again re-launches the passkey", a
   expect(mocks.login).toHaveBeenCalledTimes(2);
 });
 
-test("the dialog switches between login and register views and back", async () => {
+test("the login view has no way to switch to registering, and the register view none back", async () => {
   mocks.login.mockResolvedValue({ ok: false, code: "cancelled" });
-  render(<DialogHarness />);
+  const { unmount } = render(<DialogHarness />);
   await userEvent.click(screen.getByRole("button", { name: "Log in" }));
   await screen.findByRole("alert");
+  expect(screen.getByRole("dialog", { name: "Sign in to susu.dev" })).toBeInTheDocument();
+  expect(screen.queryByText("Need to create an account?")).not.toBeInTheDocument();
+  unmount();
 
-  await userEvent.click(screen.getByRole("button", { name: "Need to create an account?" }));
+  render(<DialogHarness mode="register" />);
+  await userEvent.click(screen.getByRole("button", { name: "Log in" }));
   expect(screen.getByRole("dialog", { name: "Create your account" })).toBeInTheDocument();
   expect(screen.getByLabelText("Invitation code")).toBeInTheDocument();
   expect(screen.getByLabelText("Full name")).toBeInTheDocument();
-  // The login error doesn't follow the user into the register view.
-  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-
-  await userEvent.click(screen.getByRole("button", { name: "Already have an account?" }));
-  expect(screen.getByRole("dialog", { name: "Sign in to susu.dev" })).toBeInTheDocument();
-  // Switching views doesn't launch a passkey by itself.
+  expect(screen.queryByText("Already have an account?")).not.toBeInTheDocument();
+  // Opening on the register view doesn't launch a passkey.
   expect(mocks.login).toHaveBeenCalledTimes(1);
 });
 
 async function openRegister() {
-  mocks.login.mockResolvedValue({ ok: false, code: "cancelled" });
-  render(<DialogHarness />);
+  render(<DialogHarness mode="register" />);
   await userEvent.click(screen.getByRole("button", { name: "Log in" }));
-  await screen.findByRole("alert");
-  await userEvent.click(screen.getByRole("button", { name: "Need to create an account?" }));
 }
 
 test("register validates only the code's shape, then collapses the code field", async () => {
@@ -181,8 +177,8 @@ test("a successful register sends the user back to login with a notice and no au
   expect(mocks.register).toHaveBeenCalledWith({ code: CODE, name: "Ada Lovelace" });
   expect(await screen.findByText(/Account created/)).toBeInTheDocument();
   expect(screen.getByRole("dialog", { name: "Sign in to susu.dev" })).toBeInTheDocument();
-  // Only the open-time attempt: registering doesn't log in.
-  expect(mocks.login).toHaveBeenCalledTimes(1);
+  // Registering doesn't log in.
+  expect(mocks.login).not.toHaveBeenCalled();
   expect(mocks.fetchSession).not.toHaveBeenCalled();
 });
 
@@ -209,7 +205,6 @@ test("a passkey failure during register keeps the code collapsed and shows waiti
   await userEvent.click(screen.getByRole("button", { name: "Create account" }));
 
   expect(screen.getByText("Waiting for your passkey…")).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Already have an account?" })).toBeDisabled();
 
   await act(async () => pending.resolve({ ok: false, code: "cancelled" }));
   expect(await screen.findByRole("alert")).toHaveTextContent("The passkey prompt was dismissed.");
@@ -217,15 +212,12 @@ test("a passkey failure during register keeps the code collapsed and shows waiti
   expect(screen.getByRole("button", { name: "Try again" })).toBeEnabled();
 });
 
-test("closing and reopening resets to the login view and forgets typed values", async () => {
+test("closing and reopening forgets typed values", async () => {
   await openRegister();
   await userEvent.type(screen.getByLabelText("Full name"), "Ada");
 
   await userEvent.click(screen.getByRole("button", { name: "Close sign in dialog" }));
-  mocks.login.mockResolvedValue({ ok: false, code: "cancelled" });
   await userEvent.click(screen.getByRole("button", { name: "Log in" }));
-  await screen.findByRole("alert");
-  await userEvent.click(screen.getByRole("button", { name: "Need to create an account?" }));
   expect(screen.getByLabelText("Full name")).toHaveValue("");
 });
 
@@ -342,10 +334,8 @@ test("a register that finishes after the dialog unmounts does nothing further", 
   const pending = deferred<{ ok: true; userId: string; role: string }>();
   mocks.register.mockReturnValue(pending.promise);
   mocks.login.mockResolvedValue({ ok: false, code: "cancelled" });
-  const { unmount } = render(<DialogHarness />);
+  const { unmount } = render(<DialogHarness mode="register" />);
   await userEvent.click(screen.getByRole("button", { name: "Log in" }));
-  await screen.findByRole("alert");
-  await userEvent.click(screen.getByRole("button", { name: "Need to create an account?" }));
   await userEvent.type(screen.getByLabelText("Invitation code"), CODE);
   await userEvent.type(screen.getByLabelText("Full name"), "Ada");
   await userEvent.click(screen.getByRole("button", { name: "Create account" }));
