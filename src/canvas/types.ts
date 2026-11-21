@@ -29,6 +29,7 @@ export interface LetteringOptions {
 export interface LetteringController {
   setPalette(key: PaletteKey): void;
   setMedium(medium: ShadingMedium): void;
+  setText(text: string): void;
   setReducedMotion(reduced: boolean): void;
   replay(): void;
   resize(): void;

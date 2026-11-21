@@ -340,6 +340,75 @@ describe("IllustratorLettering", () => {
     expect(rafSpy).toHaveBeenCalledTimes(1);
   });
 
+  it("setText rebuilds glyphs synchronously without document.fonts, replays, and ignores disposed/no-ctx engines", () => {
+    const { canvas } = makeMainCanvas(800, 220);
+    const engine = new IllustratorLettering(canvas, { text: "ab" });
+    const before = createdCanvases.length;
+    flushNextRaf(performance.now() + 8500);
+    expect(rafCallbacks.size).toBe(0);
+
+    engine.setText("abc");
+    expect(createdCanvases.length).toBeGreaterThan(before);
+    expect(rafCallbacks.size).toBe(1);
+    flushNextRaf(performance.now() + 8500);
+
+    // Same text only replays
+    const afterBuild = createdCanvases.length;
+    engine.setText("abc");
+    expect(createdCanvases.length).toBe(afterBuild);
+    expect(rafCallbacks.size).toBe(1);
+
+    engine.dispose();
+    engine.setText("zzz");
+    expect(createdCanvases.length).toBe(afterBuild);
+
+    const { canvas: noCtx } = makeMainCanvas(800, 220, false);
+    const inert = new IllustratorLettering(noCtx, { text: "ab" });
+    inert.setText("cd");
+    inert.dispose();
+  });
+
+  it("setText waits for the web font load and drops superseded or post-dispose results", async () => {
+    let resolveLoad!: () => void;
+    const load = rstest.fn(
+      () =>
+        new Promise<void>((res) => {
+          resolveLoad = res;
+        }),
+    );
+    setDocumentFonts({ load });
+
+    const { canvas } = makeMainCanvas(800, 220);
+    const engine = new IllustratorLettering(canvas, { text: "ab" });
+    const before = createdCanvases.length;
+
+    engine.setText("すす.dev");
+    expect(load).toHaveBeenCalledTimes(1);
+    expect(createdCanvases.length).toBe(before);
+    const firstResolve = resolveLoad;
+
+    engine.setText("小小.dev");
+    firstResolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    // Superseded request must not rebuild
+    expect(createdCanvases.length).toBe(before);
+
+    resolveLoad();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(createdCanvases.length).toBeGreaterThan(before);
+    expect(rafCallbacks.size).toBe(1);
+
+    engine.setText("another");
+    engine.dispose();
+    const afterDispose = createdCanvases.length;
+    resolveLoad();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(createdCanvases.length).toBe(afterDispose);
+  });
+
   it("handles narrow canvas font downscaling, 0x0 rect fallback, dpr fallback, and empty masks", () => {
     // Force totalW > w * 0.88 so fontSize downscales
     mockCharWidth = 120;

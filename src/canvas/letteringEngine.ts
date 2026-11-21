@@ -74,7 +74,7 @@ function lerpRgb(a: RgbTuple, b: RgbTuple, f: number): [number, number, number] 
 export class IllustratorLettering implements LetteringController {
   private readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D | null;
-  private readonly text: string;
+  private text: string;
   private paletteKey: PaletteKey;
   private medium: ShadingMedium;
   private reducedMotion: boolean;
@@ -173,6 +173,27 @@ export class IllustratorLettering implements LetteringController {
     this.replay();
   }
 
+  setText(text: string): void {
+    if (this.disposed || !this.ctx) return;
+    if (text === this.text) {
+      this.replay();
+      return;
+    }
+    this.text = text;
+    const apply = () => {
+      if (this.disposed || this.text !== text) return;
+      this.prepareGlyphs();
+      this.replay();
+    };
+    const fonts = document.fonts;
+    if (fonts?.load) {
+      // Canvas text does not trigger web font loads, so request the glyphs explicitly.
+      void fonts.load(this.getFontString(this.fontSize), text).then(apply, apply);
+    } else {
+      apply();
+    }
+  }
+
   setReducedMotion(reduced: boolean): void {
     if (this.disposed || !this.ctx) return;
     this.reducedMotion = reduced;
@@ -221,7 +242,7 @@ export class IllustratorLettering implements LetteringController {
   }
 
   private getFontString(size: number): string {
-    return `900 ${size}px 'Fraunces', 'Noto Serif Display', 'URW Bookman', Georgia, serif`;
+    return `900 ${size}px 'Fraunces', 'Noto Serif Display', 'URW Bookman', 'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif CJK JP', 'Songti SC', 'PMingLiU', Georgia, serif`;
   }
 
   private prepareGlyphs(): void {

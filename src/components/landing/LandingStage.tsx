@@ -14,6 +14,15 @@ import {
 const PALETTE_STORAGE_KEY = "susu-palette";
 const DEFAULT_REDRAW_INTERVAL_MS = 30_000;
 
+// Latin, Japanese "soot" (すす), and Cantonese "little" (小小). The first is always shown first.
+export const TITLE_VARIANTS = ["susu.dev", "すす.dev", "小小.dev"] as const;
+
+export function pickRandomTitle(random: () => number = Math.random, exclude?: string): string {
+  const candidates = TITLE_VARIANTS.filter((title) => title !== exclude);
+  const index = Math.min(candidates.length - 1, Math.floor(random() * candidates.length));
+  return candidates[index] as string;
+}
+
 function isPaletteKey(value: string | null | undefined): value is PaletteKey {
   return value === "sumi" || value === "twilight" || value === "nocturne";
 }
@@ -84,6 +93,7 @@ export function LandingStage({
   const cityscapeRef = useRef<CityscapeController | null>(null);
   const letteringRef = useRef<LetteringController | null>(null);
   const isLoginOpenRef = useRef(isLoginOpen);
+  const titleRef = useRef<string>(TITLE_VARIANTS[0]);
 
   useEffect(() => {
     const cityscapeCanvas = cityscapeCanvasRef.current as HTMLCanvasElement;
@@ -99,7 +109,7 @@ export function LandingStage({
     });
 
     const lettering = createLettering(letteringCanvas, {
-      text: "susu.dev",
+      text: TITLE_VARIANTS[0],
       palette,
       medium: initialMedium,
       reducedMotion,
@@ -136,6 +146,8 @@ export function LandingStage({
     const redrawTimer = window.setInterval(() => {
       if (!document.hidden && !reducedMotion && !isLoginOpenRef.current) {
         cityscape.regenerate();
+        titleRef.current = pickRandomTitle();
+        lettering.setText(titleRef.current);
       }
     }, redrawIntervalMs);
 
@@ -161,7 +173,9 @@ export function LandingStage({
   }, [isLoginOpen]);
 
   const handleReplayLettering = useCallback(() => {
-    (letteringRef.current as LetteringController).replay();
+    // Clicking cycles to a different title variant and redraws it.
+    titleRef.current = pickRandomTitle(Math.random, titleRef.current);
+    (letteringRef.current as LetteringController).setText(titleRef.current);
   }, []);
 
   const handleOpenLogin = useCallback(() => {

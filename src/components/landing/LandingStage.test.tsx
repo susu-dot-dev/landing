@@ -2,7 +2,13 @@ import { afterEach, expect, rs, test } from "@rstest/core";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { StrictMode } from "react";
-import { LandingStage, pickNextPalette, resolveInitialPalette } from "./LandingStage";
+import {
+  LandingStage,
+  pickNextPalette,
+  pickRandomTitle,
+  resolveInitialPalette,
+  TITLE_VARIANTS,
+} from "./LandingStage";
 import type {
   CityscapeController,
   CityscapeFactory,
@@ -47,6 +53,7 @@ function createMockFactories(): MockControllers {
     const controller = {
       setPalette: rs.fn(),
       setMedium: rs.fn(),
+      setText: rs.fn(),
       setReducedMotion: rs.fn(),
       replay: rs.fn(),
       resize: rs.fn(),
@@ -136,6 +143,17 @@ test("LandingStage renders accessible structure, single h1, aria-hidden canvases
   expect(screen.queryByRole("button", { name: "Studio" })).not.toBeInTheDocument();
 });
 
+test("pickRandomTitle maps rand() onto every title variant and never overflows", () => {
+  expect(pickRandomTitle(() => 0)).toBe("susu.dev");
+  expect(pickRandomTitle(() => 0.5)).toBe("すす.dev");
+  expect(pickRandomTitle(() => 0.99)).toBe("小小.dev");
+  expect(pickRandomTitle(() => 1)).toBe("小小.dev");
+  // Excluding the current title never returns it
+  expect(pickRandomTitle(() => 0, "susu.dev")).toBe("すす.dev");
+  expect(pickRandomTitle(() => 0.99, "susu.dev")).toBe("小小.dev");
+  expect(pickRandomTitle(() => 0.5, "小小.dev")).toBe("すす.dev");
+});
+
 test("pickNextPalette cycles randomly without repeating the previous palette and handles storage errors", () => {
   const randomPick = pickNextPalette();
   expect(["sumi", "twilight", "nocturne"]).toContain(randomPick);
@@ -205,7 +223,13 @@ test("LandingStage supports keyboard navigation, lettering replay, and dialog pa
   const replayButton = screen.getByRole("button", { name: "Replay susu.dev title shading" });
   expect(document.activeElement).toBe(replayButton);
   await user.keyboard("{Enter}");
-  expect(lettering.replay).toHaveBeenCalledTimes(1);
+  expect(lettering.setText).toHaveBeenCalledTimes(1);
+  // First click leaves the initial "susu.dev" for a different variant
+  expect(lettering.setText.mock.calls[0]?.[0]).not.toBe("susu.dev");
+  expect(TITLE_VARIANTS).toContain(lettering.setText.mock.calls[0]?.[0]);
+  await user.click(replayButton);
+  expect(lettering.setText).toHaveBeenCalledTimes(2);
+  expect(lettering.setText.mock.calls[1]?.[0]).not.toBe(lettering.setText.mock.calls[0]?.[0]);
 
   // Tab to Log in button and activate with Space
   await user.tab();
@@ -242,15 +266,19 @@ test("LandingStage automatically redraws skyline every 30s unless paused, hidden
   );
 
   const cityscape = mocks.cityscapes[0];
-  if (!cityscape) {
-    throw new Error("Expected cityscape controller");
+  const lettering = mocks.letterings[0];
+  if (!cityscape || !lettering) {
+    throw new Error("Expected controllers");
   }
 
-  // Fires automatically after 30 seconds
+  // Fires automatically after 30 seconds, and swaps the title variant with it
+  expect(lettering.setText).not.toHaveBeenCalled();
   act(() => {
     rs.advanceTimersByTime(30_000);
   });
   expect(cityscape.regenerate).toHaveBeenCalledTimes(1);
+  expect(lettering.setText).toHaveBeenCalledTimes(1);
+  expect(TITLE_VARIANTS).toContain(lettering.setText.mock.calls[0]?.[0]);
 
   // Skips redraw while reduced motion is active
   act(() => {
@@ -258,6 +286,7 @@ test("LandingStage automatically redraws skyline every 30s unless paused, hidden
     rs.advanceTimersByTime(30_000);
   });
   expect(cityscape.regenerate).toHaveBeenCalledTimes(1);
+  expect(lettering.setText).toHaveBeenCalledTimes(1);
 
   // Resumes redraw when reduced motion turns off
   act(() => {
