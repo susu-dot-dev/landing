@@ -200,8 +200,8 @@ export class IllustratorLettering implements LetteringController {
     this.replay();
   }
 
-  resize(): void {
-    if (this.disposed || !this.ctx) return;
+  resize(opts: { replay?: boolean } = {}): boolean {
+    if (this.disposed || !this.ctx) return false;
     const prevWidth = this.width;
     const prevHeight = this.height;
     const prevDpr = this.dpr;
@@ -212,10 +212,15 @@ export class IllustratorLettering implements LetteringController {
       this.height === prevHeight &&
       this.dpr === prevDpr
     ) {
-      return;
+      return false;
     }
     this.prepareGlyphs();
-    this.replay();
+    if (opts.replay === false) {
+      this.showCompleted();
+    } else {
+      this.replay();
+    }
+    return true;
   }
 
   dispose(): void {
@@ -547,6 +552,24 @@ export class IllustratorLettering implements LetteringController {
     return [...mainPass, ...glazePass];
   }
 
+  /** Synchronously draws the finished lettering (no write-on animation, no nib). */
+  private showCompleted(): void {
+    this.cancelLoop();
+    this.animStart = performance.now();
+    this.drawnLen = 0;
+    this.strokeCursor = 0;
+    this.strokeSegOffset = 0;
+    this.activeTip = null;
+    for (const g of this.glyphs) {
+      g.colorCtx.setTransform(1, 0, 0, 1, 0, 0);
+      g.colorCtx.clearRect(0, 0, g.colorCanvas.width, g.colorCanvas.height);
+    }
+    this.advanceShading(this.totalStrokeLen);
+    this.isComplete = true;
+    this.activeTip = null;
+    this.renderFrame(this.animStart + SHADE_DELAY + SHADE_DURATION + NIB_FADE_DURATION + 1);
+  }
+
   replay(): void {
     if (this.disposed || !this.ctx) return;
     this.cancelLoop();
@@ -564,10 +587,7 @@ export class IllustratorLettering implements LetteringController {
     }
 
     if (this.reducedMotion) {
-      this.advanceShading(this.totalStrokeLen);
-      this.isComplete = true;
-      this.activeTip = null;
-      this.renderFrame(this.animStart + SHADE_DELAY + SHADE_DURATION + NIB_FADE_DURATION + 1);
+      this.showCompleted();
       return;
     }
 

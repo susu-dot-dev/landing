@@ -15,7 +15,8 @@ export interface CityscapeController {
   setReducedMotion(reduced: boolean): void;
   setPaused(paused: boolean): void;
   handlePointerMove(clientX: number, clientY: number): void;
-  resize(): void;
+  /** Returns true when the scene was actually rebuilt. */
+  resize(): boolean;
   dispose(): void;
 }
 
@@ -32,6 +33,10 @@ export interface LetteringController {
   setText(text: string): void;
   setReducedMotion(reduced: boolean): void;
   replay(): void;
-  resize(): void;
+  /**
+   * Returns true when the lettering was actually re-laid-out. With `replay: false` the
+   * finished lettering is redrawn immediately instead of re-running the write-on animation.
+   */
+  resize(opts?: { replay?: boolean }): boolean;
   dispose(): void;
 }

@@ -358,22 +358,8 @@ test("LandingStage disposes every controller instance cleanly under React.Strict
   }
 });
 
-test("LandingStage resizes controllers via ResizeObserver and falls back to window resize", () => {
-  const originalResizeObserver = globalThis.ResizeObserver;
-  const observerState: { callback: ResizeObserverCallback | null } = { callback: null };
-  const disconnect = rs.fn();
-  const observe = rs.fn();
-
-  class MockResizeObserver {
-    constructor(callback: ResizeObserverCallback) {
-      observerState.callback = callback;
-    }
-    observe = observe;
-    unobserve = rs.fn();
-    disconnect = disconnect;
-  }
-
-  globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+test("LandingStage leaves canvases alone while resizing, then repaints once the size settles", () => {
+  rs.useFakeTimers();
 
   try {
     const mocks = createMockFactories();
@@ -381,37 +367,42 @@ test("LandingStage resizes controllers via ResizeObserver and falls back to wind
       <LandingStage
         createCityscape={mocks.createCityscape}
         createLettering={mocks.createLettering}
-        initialPalette="twilight"
-        initialMedium="hatch"
       />,
     );
+    const cityscape = mocks.cityscapes[0];
+    const lettering = mocks.letterings[0];
 
-    expect(observe).toHaveBeenCalledTimes(1);
-    observerState.callback?.([], {} as ResizeObserver);
-    expect(mocks.cityscapes[0]?.resize).toHaveBeenCalledTimes(1);
-    expect(mocks.letterings[0]?.resize).toHaveBeenCalledTimes(1);
+    // Initial sizing only
+    expect(cityscape?.resize).toHaveBeenCalledTimes(1);
+    expect(lettering?.resize).toHaveBeenCalledTimes(1);
 
-    unmount();
-    expect(disconnect).toHaveBeenCalledTimes(1);
+    // A burst of resize events (each within the settle window) does nothing
+    for (let i = 0; i < 5; i++) {
+      fireEvent(window, new Event("resize"));
+      act(() => {
+        rs.advanceTimersByTime(250);
+      });
+    }
+    expect(cityscape?.resize).toHaveBeenCalledTimes(1);
+    expect(lettering?.resize).toHaveBeenCalledTimes(1);
 
-    // Fallback when ResizeObserver is unavailable
-    // @ts-expect-error testing missing global ResizeObserver
-    globalThis.ResizeObserver = undefined;
-    const fallbackMocks = createMockFactories();
-    const fallbackRender = render(
-      <LandingStage
-        createCityscape={fallbackMocks.createCityscape}
-        createLettering={fallbackMocks.createLettering}
-      />,
-    );
+    // Settled for 350ms: repaint once, without replaying the title animation
+    act(() => {
+      rs.advanceTimersByTime(100);
+    });
+    expect(cityscape?.resize).toHaveBeenCalledTimes(2);
+    expect(lettering?.resize).toHaveBeenCalledTimes(2);
+    expect(lettering?.resize).toHaveBeenLastCalledWith({ replay: false });
 
+    // Pending settle is cancelled on unmount
     fireEvent(window, new Event("resize"));
-    expect(fallbackMocks.cityscapes[0]?.resize).toHaveBeenCalledTimes(1);
-    expect(fallbackMocks.letterings[0]?.resize).toHaveBeenCalledTimes(1);
-
-    fallbackRender.unmount();
+    unmount();
+    act(() => {
+      rs.advanceTimersByTime(600);
+    });
+    expect(cityscape?.resize).toHaveBeenCalledTimes(2);
   } finally {
-    globalThis.ResizeObserver = originalResizeObserver;
+    rs.useRealTimers();
   }
 });
 

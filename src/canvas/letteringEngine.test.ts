@@ -280,6 +280,31 @@ describe("IllustratorLettering", () => {
     engine.dispose();
   });
 
+  it("resize({ replay: false }) redraws the finished lettering without scheduling an animation", () => {
+    const { canvas } = makeMainCanvas(800, 220);
+    const engine = new IllustratorLettering(canvas, { text: "s.d" });
+    flushNextRaf(performance.now() + 8500);
+    expect(rafCallbacks.size).toBe(0);
+
+    canvas.getBoundingClientRect = () =>
+      ({
+        width: 960,
+        height: 240,
+        left: 0,
+        top: 0,
+        right: 960,
+        bottom: 240,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    expect(engine.resize({ replay: false })).toBe(true);
+    expect(rafCallbacks.size).toBe(0);
+    expect(engine.resize({ replay: false })).toBe(false);
+
+    engine.dispose();
+  });
+
   it("schedules 0 rAF frames in reducedMotion mode and supports live toggling", () => {
     const { canvas, ctx } = makeMainCanvas(800, 220);
     const engine = new IllustratorLettering(canvas, {

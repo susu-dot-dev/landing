@@ -235,8 +235,8 @@ export class InkCityscape implements CityscapeController {
     this.pointer.ty = Math.max(0, Math.min(1, (clientY - rect.top) / Math.max(1, rect.height)));
   }
 
-  resize(): void {
-    if (this.disposed || !this.ctx) return;
+  resize(): boolean {
+    if (this.disposed || !this.ctx) return false;
     const rect = this.canvas.getBoundingClientRect();
     const nextWidth = Math.max(320, Math.round(rect.width || window.innerWidth));
     const nextHeight = Math.max(320, Math.round(rect.height || window.innerHeight));
@@ -248,7 +248,7 @@ export class InkCityscape implements CityscapeController {
       nextDpr === this.dpr &&
       Math.abs(nextHeight - this.height) < MINOR_HEIGHT_RESIZE_THRESHOLD
     ) {
-      return;
+      return false;
     }
 
     this.hasSized = true;
@@ -265,6 +265,7 @@ export class InkCityscape implements CityscapeController {
 
     this.rebuildScene();
     this.renderFrame(this.reducedMotion ? this.startTime : performance.now());
+    return true;
   }
 
   dispose(): void {

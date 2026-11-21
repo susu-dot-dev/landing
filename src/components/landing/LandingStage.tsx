@@ -13,6 +13,7 @@ import {
 
 const PALETTE_STORAGE_KEY = "susu-palette";
 const DEFAULT_REDRAW_INTERVAL_MS = 30_000;
+const RESIZE_SETTLE_MS = 350;
 
 // Latin, Japanese "soot" (すす), and Cantonese "little" (小小). The first is always shown first.
 export const TITLE_VARIANTS = ["susu.dev", "すす.dev", "小小.dev"] as const;
@@ -98,7 +99,6 @@ export function LandingStage({
   useEffect(() => {
     const cityscapeCanvas = cityscapeCanvasRef.current as HTMLCanvasElement;
     const letteringCanvas = letteringCanvasRef.current as HTMLCanvasElement;
-    const stageElement = stageRef.current as HTMLDivElement;
 
     const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     let reducedMotion = reducedMotionQuery.matches;
@@ -130,18 +130,26 @@ export function LandingStage({
     };
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
 
-    const handleResize = () => {
+    // Initial sizing happens once, synchronously.
+    cityscape.resize();
+    lettering.resize();
+
+    // While the window is being resized the canvases are left alone (they stretch). Once the
+    // size has settled, repaint at the new size. The title is re-laid-out in its finished state,
+    // without replaying the write-on animation.
+    let settleTimer: number | null = null;
+
+    const handleSettled = () => {
+      settleTimer = null;
       cityscape.resize();
-      lettering.resize();
+      lettering.resize({ replay: false });
     };
 
-    let resizeObserver: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== "undefined") {
-      resizeObserver = new ResizeObserver(handleResize);
-      resizeObserver.observe(stageElement);
-    } else {
-      window.addEventListener("resize", handleResize);
-    }
+    const handleResize = () => {
+      if (settleTimer !== null) window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(handleSettled, RESIZE_SETTLE_MS);
+    };
+    window.addEventListener("resize", handleResize);
 
     const redrawTimer = window.setInterval(() => {
       if (!document.hidden && !reducedMotion && !isLoginOpenRef.current) {
@@ -153,11 +161,8 @@ export function LandingStage({
 
     return () => {
       window.clearInterval(redrawTimer);
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      } else {
-        window.removeEventListener("resize", handleResize);
-      }
+      window.removeEventListener("resize", handleResize);
+      if (settleTimer !== null) window.clearTimeout(settleTimer);
       window.removeEventListener("pointermove", handlePointerMove);
       reducedMotionQuery.removeEventListener("change", handleReducedMotionChange);
       cityscape.dispose();
